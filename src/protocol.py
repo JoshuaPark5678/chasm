@@ -17,8 +17,12 @@ class Type(IntEnum):
     COVER = 7
     DISCONNECT = 8
 
-
 def encode(payload: bytes, msg_type: Type = Type.CHAT) -> bytes:
+    """
+    Encode messages into binary
+    3 components. Type and payload
+    returns bytes.
+    """
     b_data = msg_type.to_bytes(1, "big")
     if (len(payload) > MAX_PAYLOAD):
         raise ValueError(f"payload too big: {len(payload)} > {MAX_PAYLOAD}")
@@ -27,9 +31,14 @@ def encode(payload: bytes, msg_type: Type = Type.CHAT) -> bytes:
     b_data += payload
     return b_data
 
-def decode(b_data: bytes) -> list(Type | bytes):
+def decode(b_data: bytes) -> tuple[Type, bytes, bytes] | None:
+    """
+    Decode binary into Type and Message
+    Returns None if incomplete binary
+    """
     if len(b_data) < 3:
         return None
+
     msg_type = int.from_bytes(b_data[:1], byteorder='big')
     msg_length = int.from_bytes(b_data[1:3], byteorder='big') 
     
@@ -38,8 +47,8 @@ def decode(b_data: bytes) -> list(Type | bytes):
 
     payload = b_data[3:msg_length + 3]
     leftover = b_data[msg_length + 3:]
-    return [Type(msg_type), payload, leftover]
+    return (Type(msg_type), payload, leftover)
 
 if __name__ == "__main__":
     # quick self-check while developing
-    print(decode(encode(b"hello", Type.CHAT)))
+    print(encode(b"now message 2"))

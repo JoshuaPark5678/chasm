@@ -1,6 +1,10 @@
 # Chasm EE2E Chat Client
 
 import argparse
+from pathlib import Path
+
+# Get the directory where this script is saved
+BASE_DIR = Path(__file__).resolve().parent
 
 def main():
     # Initialize the parser
@@ -16,6 +20,9 @@ def main():
     
     #  Parse and use the arguments
     args = parser.parse_args()
+    with open(BASE_DIR / "chasm.txt", "r", encoding="utf-8") as file:
+        content = file.read()
+        print(content)
     print(f"Hello, {args.name}!")
 
 
