@@ -5,8 +5,27 @@ from datetime import datetime
 
 from protocol import Type, decode, encode
 
+# Global peer dictionary:
+clients = {}
+
+def split_frames(buffer: bytes) -> tuple[list[tuple[Type, bytes]], bytes]:
+    frames = []
+    leftover = buffer
+
+    while len(leftover) > 0:
+        message = decode(leftover)
+        if message is not None:
+            frames.append((message[0], message[1]))
+            leftover = message[2]
+        else:
+            break
+
+    return (frames, leftover)
+
+
 async def client_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     addr = writer.get_extra_info("peername")
+    clients[addr] = writer
     print(f"Connected: {addr}")
     
     buffer : bytes = b''
@@ -22,17 +41,28 @@ async def client_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
                 break
 
             buffer += incoming
+            
+            frames, buffer = split_frames(buffer)
+            
+            # Send messages to peers
+            for frame in frames:
+                peers = clients.copy()
+                peers.pop(addr, None)
 
-            while len(buffer) > 0:
-                message = decode(buffer)
-                if message is not None:
-                    # Log (payload visible)
-                    print(f"{addr} : {message[0].name} : {message[1]} : {datetime.now().isoformat()}")
-                    writer.write(encode(payload = message[1], msg_type = message[0]))
-                    await writer.drain()
-                    buffer = message[2]
+                if not peers:
+                    print(f"dropped CHAT from {addr}: no peer")
                 else:
-                    break
+                    for k, w in peers.items():
+                        try:
+                            w.write(encode(payload = frame[1], msg_type = frame[0]))
+                            await w.drain()
+                        except OSError:
+                            print(f"peer {k} gone")
+                            clients.pop(k, None) 
+                            
+
+                    # Log (payload visible)
+                    print(f"{addr} -> {peers.keys()} : {frame[0].name} : {frame[1]} : {datetime.now().isoformat()}")   
 
     except ConnectionResetError:
         print(f"Connection reset by {addr}")
@@ -40,6 +70,7 @@ async def client_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
         print(f"protocol violation from {addr}: {e}") 
     finally:
         print(f"Closing connection: {addr}")
+        clients.pop(addr, None)
         writer.close()
         await writer.wait_closed()
 
