@@ -8,7 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 def main():
     # Initialize the parser
-    parser = argparse.ArgumentParser(description="A simple greeting CLI tool.")
+    parser = argparse.ArgumentParser()
     
     # Define arguments and flags
     parser.add_argument(
@@ -20,9 +20,6 @@ def main():
     
     #  Parse and use the arguments
     args = parser.parse_args()
-    with open(BASE_DIR / "chasm.txt", "r", encoding="utf-8") as file:
-        content = file.read()
-        print(content)
     print(f"Hello, {args.name}!")
 
 

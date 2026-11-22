@@ -51,4 +51,5 @@ def decode(b_data: bytes) -> tuple[Type, bytes, bytes] | None:
 
 if __name__ == "__main__":
     # quick self-check while developing
-    print(encode(b"now message 2"))
+    print(encode(b"helloworld"))
+    print(decode(b'\x00\x00\nhelloworld'))
