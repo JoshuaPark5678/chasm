@@ -37,25 +37,29 @@ async def transmit(writer: asyncio.StreamWriter, name: bytes):
     writer.write(encode(name, Type.IDENT))
     await writer.drain()
 
-    while True:
-        message : str = await asyncio.to_thread(input)
+    while True: 
         try:
+            message : str = await asyncio.to_thread(input)
             payload : bytes  = message.encode('utf-8')
             
             writer.write(encode(payload, Type.CHAT))
             await writer.drain()
 
         except UnicodeEncodeError:
-            print(f"Failed to encode: {message}")
+            print("Failed to encode message.")
+        except EOFError:
+            print("\nClient stopped.")
+            break
 
 async def client(host: str, port: int, name: bytes):
     reader, writer = await asyncio.open_connection(host, port)
     
     try:
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(receive(reader))
+            task = tg.create_task(receive(reader))
             
             await transmit(writer, name)
+            task.cancel()
     finally:
         # Always close the connection cleanly
         writer.close()

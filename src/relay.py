@@ -31,23 +31,28 @@ async def client_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWri
             
             # Send messages to peers
             for frame in frames:
-                peers = clients.copy()
-                peers.pop(addr, None)
+                match frame[0]:
+                    case Type.IDENT:
+                        continue 
+                    case Type.CHAT:
+                        peers = clients.copy()
+                        peers.pop(addr, None)
 
-                if not peers:
-                    print(f"dropped CHAT from {addr}: no peer")
-                else:
-                    for k, w in peers.items():
-                        try:
-                            w.write(encode(payload = frame[1], msg_type = frame[0]))
-                            await w.drain()
-                        except OSError:
-                            print(f"peer {k} gone")
-                            clients.pop(k, None) 
-                            
+                        if not peers:
+                            print(f"dropped CHAT from {addr}: no peer")
+                        else:
+                            for k, w in peers.items():
+                                try:
+                                    w.write(encode(payload = frame[1], msg_type = frame[0]))
+                                    await w.drain()
+                                except OSError:
+                                    print(f"peer {k} gone")
+                                    clients.pop(k, None) 
+                                    
 
-                    # Log (payload visible)
-                    print(f"{addr} -> {peers.keys()} : {frame[0].name} : {frame[1]} : {datetime.now().isoformat()}")   
+                            # Log (payload visible)
+                            print(f"{addr} -> {peers.keys()} : {frame[0].name} : {frame[1]} : {datetime.now().isoformat()}")   
+                    
 
     except ConnectionResetError:
         print(f"Connection reset by {addr}")
