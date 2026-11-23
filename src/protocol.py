@@ -49,6 +49,21 @@ def decode(b_data: bytes) -> tuple[Type, bytes, bytes] | None:
     leftover = b_data[msg_length + 3:]
     return (Type(msg_type), payload, leftover)
 
+def split_frames(buffer: bytes) -> tuple[list[tuple[Type, bytes]], bytes]:
+    frames = []
+    leftover = buffer
+
+    while len(leftover) > 0:
+        message = decode(leftover)
+        if message is not None:
+            frames.append((message[0], message[1]))
+            leftover = message[2]
+        else:
+            break
+
+    return (frames, leftover)
+
+
 if __name__ == "__main__":
     # quick self-check while developing
     print(encode(b"helloworld"))

@@ -3,25 +3,10 @@
 import asyncio
 from datetime import datetime
 
-from protocol import Type, decode, encode
+from protocol import Type, decode, encode, split_frames
 
 # Global peer dictionary:
 clients = {}
-
-def split_frames(buffer: bytes) -> tuple[list[tuple[Type, bytes]], bytes]:
-    frames = []
-    leftover = buffer
-
-    while len(leftover) > 0:
-        message = decode(leftover)
-        if message is not None:
-            frames.append((message[0], message[1]))
-            leftover = message[2]
-        else:
-            break
-
-    return (frames, leftover)
-
 
 async def client_handler(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
     addr = writer.get_extra_info("peername")

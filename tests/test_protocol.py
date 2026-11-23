@@ -1,6 +1,6 @@
 # Test for src/protocol.py
 
-from src.protocol import MAX_PAYLOAD, Type, decode, encode
+from src.protocol import MAX_PAYLOAD, Type, decode, encode, split_frames
 
 # Tests:
 
@@ -61,6 +61,14 @@ def test_decode_two_frames():
         result2 = decode(result1[2])
         assert result2 == (Type.CHAT, b'now message 2', b''), \
         f"expected (<Type.CHAT : 0>, b'now message 2', b''), got {result2}."
+
+def test_split_frames_full_message():
+    buffer : bytes = b'\x00\x00\x11this is message 1\x00\x00\rnow message 2'
+    result = split_frames(buffer)
+    assert result == ([(Type.CHAT, b'this is message 1'), (Type.CHAT, b'now message 2')], b''), \
+    f"expected ([(<Type.CHAT: 0>, b'this is message 1'), (<Type.CHAT: 0>, b'now message 2')], b''), got {result}"
+
+
 
 
 
